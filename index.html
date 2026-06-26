@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wedding Live Translation</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Settings Overlay -->
+        <div id="settings-overlay" class="overlay">
+            <div class="settings-card">
+                <h1>Live Translation</h1>
+                <p class="subtitle">Please enter your Gemini API Key to begin.</p>
+                <div class="input-group">
+                    <input type="password" id="api-key-input" placeholder="Gemini API Key" autocomplete="off" style="margin-bottom: 0.8rem;">
+                    <textarea id="system-prompt-input" placeholder="System Prompt (Context and Rules)">You are a real-time translator for a wedding ceremony. The bride and groom are Bill and Mary. Ensure their names are always translated as Bill and Mary, and never mistranslated as other words. Maintain a warm, joyful, and formal tone appropriate for a wedding.</textarea>
+                </div>
+                <button id="start-btn" class="primary-btn">Begin Translation</button>
+                <div id="error-message" class="error-msg"></div>
+            </div>
+        </div>
+
+        <!-- Main Display -->
+        <header class="header">
+            <div class="header-content">
+                <div class="title-area">
+                    <div class="status-indicator">
+                        <span id="recording-dot" class="dot"></span>
+                        <span id="status-text">Waiting to start...</span>
+                    </div>
+                </div>
+                <div class="button-group">
+                    <button id="stop-btn" class="secondary-btn icon-only hidden" title="Pause">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                            <rect x="6" y="4" width="4" height="16"></rect>
+                            <rect x="14" y="4" width="4" height="16"></rect>
+                        </svg>
+                    </button>
+                    <button id="copy-btn" class="secondary-btn icon-only hidden" title="Copy Transcript">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <main class="transcript-container">
+            <div id="transcript-content" class="transcript-content">
+                <!-- Transcript lines will be injected here -->
+                <div class="welcome-message" id="welcome-message">
+                    The ceremony translation will appear here shortly.
+                </div>
+            </div>
+            
+            <!-- Typing indicator -->
+            <div id="typing-indicator" class="typing-indicator hidden">
+                <span></span><span></span><span></span>
+            </div>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
