@@ -186,7 +186,6 @@ async function startTranslation() {
                     generationConfig: {
                         responseModalities: ["AUDIO"], // Model expects AUDIO modalities
                         translationConfig: {
-                            sourceLanguageCode: 'zh', // Lock input to Chinese to prevent misidentifying poor audio
                             targetLanguageCode: 'en', // 'en' works, 'en-US' crashes the server!
                             echoTargetLanguage: false
                         }
