@@ -4,6 +4,7 @@ const apiKeyInput = document.getElementById('api-key-input');
 const systemPromptInput = document.getElementById('system-prompt-input');
 const startBtn = document.getElementById('start-btn');
 const stopBtn = document.getElementById('stop-btn');
+const langBtn = document.getElementById('lang-btn');
 const copyBtn = document.getElementById('copy-btn');
 const errorMsg = document.getElementById('error-message');
 const transcriptContent = document.getElementById('transcript-content');
@@ -11,6 +12,7 @@ const welcomeMsg = document.getElementById('welcome-message');
 const recordingDot = document.getElementById('recording-dot');
 const statusText = document.getElementById('status-text');
 const typingIndicator = document.getElementById('typing-indicator');
+const pauseModal = document.getElementById('pause-modal');
 
 // === State Variables ===
 let websocket = null;
@@ -18,6 +20,8 @@ let audioContext = null;
 let mediaStream = null;
 let audioProcessor = null;
 let isRecording = false;
+let pauseModalTimeout = null;
+let targetLanguage = 'en'; // default is Chinese to English
 
 // We will buffer the PCM data to send in larger chunks.
 // A larger chunk (e.g., 1.5 seconds) delays the translation slightly but provides 
@@ -69,6 +73,21 @@ stopBtn.addEventListener('click', () => {
     }
 });
 
+langBtn.addEventListener('click', () => {
+    targetLanguage = targetLanguage === 'en' ? 'zh' : 'en';
+    langBtn.title = targetLanguage === 'en' ? "Switch Language (ZH -> EN)" : "Switch Language (EN -> ZH)";
+    
+    // Clear displayed texts
+    transcriptContent.innerHTML = '';
+    if (typeof currentBlock !== 'undefined') currentBlock = null;
+    
+    // If we are currently translating, restart the translation
+    if (isRecording) {
+        stopTranslation();
+        setTimeout(startTranslation, 300); // Wait for socket to close
+    }
+});
+
 copyBtn.addEventListener('click', () => {
     const textLines = Array.from(transcriptContent.children)
         .filter(el => !el.classList.contains('welcome-message') && !el.classList.contains('partial'))
@@ -104,6 +123,10 @@ function base64Encode(buffer) {
 }
 
 async function startTranslation() {
+    // Hide pause modal and clear its timeout
+    if (pauseModalTimeout) clearTimeout(pauseModalTimeout);
+    if (pauseModal) pauseModal.classList.add('hidden');
+
     const apiKey = apiKeyInput.value.trim();
     if (!apiKey) {
         errorMsg.textContent = "Please enter your Gemini API Key.";
@@ -175,23 +198,39 @@ async function startTranslation() {
 
         websocket.onopen = () => {
             console.log('WebSocket Connected successfully');
-
+            
             // Send Setup Message
-            const setupMessage = {
-                setup: {
-                    model: `models/${MODEL_NAME}`,
-                    systemInstruction: {
-                        parts: [{ text: systemPromptText }]
-                    },
-                    generationConfig: {
-                        responseModalities: ["AUDIO"], // Model expects AUDIO modalities
-                        translationConfig: {
-                            targetLanguageCode: 'en', // 'en' works, 'en-US' crashes the server!
-                            echoTargetLanguage: false
+            let setupMessage;
+            if (targetLanguage === 'en') {
+                const systemPromptText = systemPromptInput.value.trim() || "You are a real-time translator.";
+                setupMessage = {
+                    setup: {
+                        model: `models/${MODEL_NAME}`,
+                        systemInstruction: { parts: [{ text: systemPromptText }] },
+                        generationConfig: {
+                            responseModalities: ["AUDIO"],
+                            translationConfig: {
+                                targetLanguageCode: 'en',
+                                echoTargetLanguage: false
+                            }
                         }
                     }
-                }
-            };
+                };
+            } else {
+                setupMessage = {
+                    setup: {
+                        model: `models/${MODEL_NAME}`,
+                        systemInstruction: { parts: [{ text: "You are a real-time translator. Translate the English speech to Simplified Chinese. The spoken language is ALWAYS English. Ignore static and background noise, do not mistake it for other languages." }] },
+                        generationConfig: {
+                            responseModalities: ["AUDIO"],
+                            translationConfig: {
+                                targetLanguageCode: 'zh',
+                                echoTargetLanguage: false
+                            }
+                        }
+                    }
+                };
+            }
             console.log("Sending setup message:", JSON.stringify(setupMessage, null, 2));
             websocket.send(JSON.stringify(setupMessage));
         };
@@ -259,10 +298,11 @@ async function startTranslation() {
                     overlay.classList.add('hidden');
                     stopBtn.innerHTML = PAUSE_SVG;
                     stopBtn.classList.remove('hidden');
+                    langBtn.classList.remove('hidden');
                     copyBtn.classList.remove('hidden');
                     if (welcomeMsg) welcomeMsg.style.display = 'none';
                     recordingDot.classList.add('active');
-                    statusText.textContent = "Listening and translating...";
+                    statusText.textContent = targetLanguage === 'en' ? "Listening to Chinese..." : "Listening to English...";
                     // Do not clear transcriptContent.innerHTML to allow resume behavior
                 }
 
@@ -344,6 +384,14 @@ function stopTranslation() {
     recordingDot.classList.remove('active');
     statusText.textContent = "Paused";
     typingIndicator.classList.add('hidden');
+    
+    // Show the "translation unavailable" modal after 3 seconds
+    if (pauseModalTimeout) clearTimeout(pauseModalTimeout);
+    pauseModalTimeout = setTimeout(() => {
+        if (!isRecording && pauseModal) {
+            pauseModal.classList.remove('hidden');
+        }
+    }, 3000);
 }
 
 function scrollToBottom() {

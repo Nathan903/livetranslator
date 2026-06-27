@@ -35,6 +35,11 @@
                     </div>
                 </div>
                 <div class="button-group">
+                    <button id="lang-btn" class="secondary-btn icon-only hidden" title="Switch Language (ZH -> EN)">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M7 10h13M16 6l4 4-4 4M17 14H4M8 18l-4-4 4-4"></path>
+                        </svg>
+                    </button>
                     <button id="stop-btn" class="secondary-btn icon-only hidden" title="Pause">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
                             <rect x="6" y="4" width="4" height="16"></rect>
@@ -58,12 +63,19 @@
                     The ceremony translation will appear here shortly.
                 </div>
             </div>
-            
             <!-- Typing indicator -->
             <div id="typing-indicator" class="typing-indicator hidden">
                 <span></span><span></span><span></span>
             </div>
         </main>
+
+        <!-- Pause Overlay Modal -->
+        <div id="pause-modal" class="pause-modal hidden">
+            <div class="pause-modal-content">
+                <p class="pause-text-en">Sorry, translation is not available for this portion of the event.</p>
+                <p class="pause-text-zh">抱歉，此环节暂时无法提供翻译。</p>
+            </div>
+        </div>
     </div>
 
     <script src="app.js"></script>
