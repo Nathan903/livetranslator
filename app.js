@@ -26,7 +26,7 @@ let targetLanguage = 'en'; // default is Chinese to English
 // We will buffer the PCM data to send in larger chunks.
 // A larger chunk (e.g., 1.5 seconds) delays the translation slightly but provides 
 // the Gemini model with much more context per request, significantly improving quality.
-const PCM_BUFFER_SIZE = 16000 * 1.5; // 1.5s at 16kHz = 24000 samples
+let pcmBufferSize = 24000; // Will be updated dynamically to 1.5s based on actual sample rate
 let pcmBuffer = [];
 
 // Wait for DOM load
@@ -152,8 +152,14 @@ async function startTranslation() {
 
         // 2. Setup Audio Context
         audioContext = new (window.AudioContext || window.webkitAudioContext)({
-            sampleRate: 16000
+            sampleRate: 16000 // Best effort, but browser may ignore and use hardware rate (e.g. 48000)
         });
+        
+        // Dynamically size the buffer based on the *actual* sample rate we got
+        pcmBufferSize = Math.floor(audioContext.sampleRate * 1.5);
+        
+        console.log(`[Audio Setup] Requested: 16000Hz | Actual browser hardware rate: ${audioContext.sampleRate}Hz`);
+        console.log(`[Audio Setup] Dynamic buffer size locked to ${pcmBufferSize} samples (exactly 1.5 seconds)`);
 
         // Load the AudioWorklet via a Blob URL to avoid CORS issues on file:// protocol
         const workletCode = `
@@ -250,7 +256,7 @@ async function startTranslation() {
             }
 
             // Send chunk if it reaches our desired size
-            if (pcmBuffer.length >= PCM_BUFFER_SIZE) {
+            if (pcmBuffer.length >= pcmBufferSize) {
                 const chunkToSend = new Int16Array(pcmBuffer);
                 pcmBuffer = []; // reset
 
@@ -258,7 +264,7 @@ async function startTranslation() {
                 const audioMessage = {
                     realtimeInput: {
                         mediaChunks: [{
-                            mimeType: 'audio/pcm;rate=16000',
+                            mimeType: `audio/pcm;rate=${audioContext.sampleRate}`,
                             data: base64Data
                         }]
                     }
