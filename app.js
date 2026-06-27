@@ -154,12 +154,13 @@ async function startTranslation() {
         audioContext = new (window.AudioContext || window.webkitAudioContext)({
             sampleRate: 16000 // Best effort, but browser may ignore and use hardware rate (e.g. 48000)
         });
-        
         // Dynamically size the buffer based on the *actual* sample rate we got
-        pcmBufferSize = Math.floor(audioContext.sampleRate * 1.5);
+        // We use a small chunk (0.25 seconds) to maintain a smooth, real-time stream. 
+        // Large chunks (like 1.5s) can overwhelm the server's streaming pipeline and cause compounding lag.
+        pcmBufferSize = Math.floor(audioContext.sampleRate * 0.25);
         
         console.log(`[Audio Setup] Requested: 16000Hz | Actual browser hardware rate: ${audioContext.sampleRate}Hz`);
-        console.log(`[Audio Setup] Dynamic buffer size locked to ${pcmBufferSize} samples (exactly 1.5 seconds)`);
+        console.log(`[Audio Setup] Dynamic buffer size locked to ${pcmBufferSize} samples (0.25 seconds)`);
 
         // Load the AudioWorklet via a Blob URL to avoid CORS issues on file:// protocol
         const workletCode = `
@@ -316,13 +317,13 @@ async function startTranslation() {
                     const content = response.serverContent;
 
                     // Original input transcription
-                    if (content.inputTranscription) {
+                    if (content.inputTranscription && content.inputTranscription.text) {
                         console.log("Original speech:", content.inputTranscription.text);
                         displayOriginal(content.inputTranscription.text);
                     }
 
                     // Translated output
-                    if (content.outputTranscription) {
+                    if (content.outputTranscription && content.outputTranscription.text) {
                         console.log("Received output transcription:", content.outputTranscription.text);
                         displayTranslation(content.outputTranscription.text);
                     } else if (content.modelTurn && content.modelTurn.parts) {
